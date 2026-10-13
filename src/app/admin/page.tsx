@@ -11,7 +11,7 @@ type Row = {
   name: string | null;
   userId: string | null;
   invitedAt: Date | null;
-  status: "invited" | "new" | "progress" | "ready";
+  status: "invited" | "new" | "progress" | "submitted" | "ready";
   minutes: number | null;
   updated: Date | null;
   score: number | null;
@@ -54,7 +54,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const u = userByEmail.get(email);
     const intake = u ? intakeByUser.get(u.id) : undefined;
     const d = (intake?.data ?? {}) as Record<string, any>;
-    const status: Row["status"] = !u ? "invited" : d.framework ? "ready" : d.startedAt ? "progress" : "new";
+    const status: Row["status"] = !u ? "invited" : intake?.releasedAt ? "ready" : intake?.submittedAt ? "submitted" : d.startedAt ? "progress" : "new";
     return {
       email,
       name: d.client?.name || i?.name || u?.name || null,
@@ -66,10 +66,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       score: scoreOf(d.framework),
     };
   });
-  rows.sort((a, b) => (b.updated?.getTime() ?? b.invitedAt?.getTime() ?? 0) - (a.updated?.getTime() ?? a.invitedAt?.getTime() ?? 0));
+  const rank = (r: Row) => (r.status === "submitted" ? 0 : 1);
+  rows.sort((a, b) => rank(a) - rank(b) || (b.updated?.getTime() ?? b.invitedAt?.getTime() ?? 0) - (a.updated?.getTime() ?? a.invitedAt?.getTime() ?? 0));
 
   const count = (s: Row["status"]) => rows.filter((r) => r.status === s).length;
-  const LABEL = { invited: "Invited", new: "Signed in", progress: "In progress", ready: "Framework ready" } as const;
+  const LABEL = { invited: "Invited", new: "Signed in", progress: "In progress", submitted: "Needs your review", ready: "Results sent" } as const;
 
   return (
     <>
@@ -95,9 +96,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
         <div className="adm-stats">
           <div className="adm-stat"><span>Invited</span><b>{rows.length}</b></div>
-          <div className="adm-stat"><span>Not signed in yet</span><b>{count("invited")}</b></div>
-          <div className="adm-stat"><span>In progress</span><b>{count("progress") + count("new")}</b></div>
-          <div className="adm-stat"><span>Framework ready</span><b>{count("ready")}</b></div>
+          <div className="adm-stat"><span>Filling it in</span><b>{count("invited") + count("progress") + count("new")}</b></div>
+          <div className="adm-stat"><span>Needs your review</span><b>{count("submitted")}</b></div>
+          <div className="adm-stat"><span>Results sent</span><b>{count("ready")}</b></div>
         </div>
 
         <form className="adm-invite" action={addInvite}>

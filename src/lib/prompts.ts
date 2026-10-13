@@ -1,4 +1,5 @@
-// Ported from the artifact version of the engine. The prompts are unchanged; only the inputs now come from the database.
+// The CEO framework rubric and prompts, ported from the artifact. Not used by the app while frameworks are built
+// by Block Ten in Claude Code; kept as the reference for that work and for turning on in-app generation later.
 /* eslint-disable */
 type Intake = Record<string, any>;
 type Part = "customer" | "edge" | "offer";
