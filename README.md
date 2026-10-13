@@ -64,5 +64,8 @@ Locally you also need `AI_GATEWAY_API_KEY` (create one in the Vercel dashboard u
   `invite` table or `ADMIN_EMAILS`. Removing access in `/admin` also signs that person out.
 - **History:** every generated framework is also stored in the `framework` table, so a later
   rebuild never loses an earlier version.
+- **Runs:** each client can run their framework `MAX_RUNS` times in total (default 3). After a run
+  the results end with recommendations that link back to the page to update, and a **Run again**
+  button showing how many runs are left. Admins aren't limited.
 - **PDF:** built in the browser (html2canvas + jsPDF, loaded from cdnjs on click) and
   downloaded directly. Pages are cut between sections and rows, never through them.

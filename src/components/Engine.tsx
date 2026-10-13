@@ -5,6 +5,9 @@ export type EngineInit = {
   intake: Record<string, unknown>;
   intakeUrl: string;
   generateUrl: string;
+  runsUsed: number;
+  /** null = no limit (admins). */
+  maxRuns: number | null;
 };
 
 type Props = {
@@ -61,7 +64,7 @@ ${viewing ? `<div class="admin-banner"><span>Admin view: you're editing <b>${esc
     <>
       <div dangerouslySetInnerHTML={{ __html: skeleton }} />
       <script id="wde-init" type="application/json" dangerouslySetInnerHTML={{ __html: json }} />
-      <Script src="/engine.js?v=1" strategy="afterInteractive" />
+      <Script src="/engine.js?v=3" strategy="afterInteractive" />
     </>
   );
 }

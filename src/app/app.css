@@ -60,3 +60,12 @@ input[type=email]:focus{outline:none;background:var(--field-hi);border-color:var
   .adm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .adm-invite{grid-template-columns:minmax(0,1fr)}
 }
+
+/* runs and recommendations */
+.runs-note{font-size:14px;color:var(--ink-2);margin:0 0 14px}
+.res .rec-go{all:unset;cursor:pointer;display:inline-block;margin-top:10px;margin-left:8px;font:600 13px/1 var(--sans);color:var(--orchid-hi);padding:7px 10px;border-radius:999px;border:1px solid rgba(191,123,203,.35);background:rgba(191,123,203,.08)}
+.res .rec-go:hover{background:rgba(191,123,203,.16)}
+.res .rec-go:focus-visible{outline:2px solid var(--orchid);outline-offset:2px}
+.res .again{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px;padding:20px 22px;border-radius:22px;background:var(--panel);border:1px solid rgba(191,123,203,.4);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+.res .again b{font:700 16px/1.2 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.res .again p{font-size:14px;color:var(--ink-2);margin-top:6px;max-width:60ch}

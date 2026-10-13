@@ -4,6 +4,12 @@
 // ---------- state ----------
 const CFG=(()=>{try{return JSON.parse(document.getElementById("wde-init").textContent)}catch(e){return{}}})();
 const STEP_KEY="wde.step."+(CFG.userId||"me");
+// Runs: clients get a fixed number (maxRuns); admins (maxRuns null) aren't limited.
+const runsLeft=()=>CFG.maxRuns==null?Infinity:Math.max(0,CFG.maxRuns-(CFG.runsUsed||0));
+function runLabel(){
+  if(!S.framework)return CFG.maxRuns==null?"Generate the CEO framework":`Generate my CEO framework`;
+  const l=runsLeft();return l===Infinity?"Run again":l>0?`Run again (${l} left)`:"No runs left";
+}
 function blank(){return{client:{name:"",brand:"",platforms:{}},simba:{},competitors:[{},{},{}],edge:{},beliefs:[{},{},{}],certs:[{}],awards:[{}],testimonials:[{}],interviews:[{},{}],offer:{effort:5},framework:null,committed:false,startedAt:0,finishedAt:0,updatedAt:0}}
 let S=blank(), step=0;
 
@@ -211,10 +217,13 @@ function renderWelcome(){
 // ---------- generate ----------
 function renderGenerate(){
   const tiles=PAGES().map(i=>{const[a,b]=progress(i);return `<div class="ready-tile"><div class="k">${STEPS[i].t}</div><div class="v">${a}/${b}</div><div class="bar"><i style="width:${Math.round(a/b*100)}%"></i></div></div>`}).join("");
-  return `<div class="page-head"><span class="eyebrow">Last step · CEO framework · 3 min</span><h2>Build the CEO framework</h2>
-  <p>Claude scores your answers against the Brand Conversion Engine's trust signals, gives Customer, Edge and Offer a verdict, names the biggest trust leak, and lists the questions that would strengthen weak spots.</p></div>
+  const max=CFG.maxRuns,used=CFG.runsUsed||0,left=runsLeft();
+  const runs=max==null?`Admin: no run limit. This client has used ${used} run${used===1?"":"s"}.`:left>0?`Run ${used+1} of ${max}. After each run, use the recommendations to strengthen your answers, then run again.`:`You've used all ${max} runs. Contact Block Ten Strategy if you need another.`;
+  return `<div class="page-head"><span class="eyebrow">Last step · CEO framework · 3 min</span><h2>${S.framework?"Your CEO framework":"Build the CEO framework"}</h2>
+  <p>Claude scores your answers against the Brand Conversion Engine's trust signals, gives Customer, Edge and Offer a verdict, names the biggest trust leak, and recommends what to strengthen.</p></div>
   <div class="ready">${tiles}</div>
-  <div class="gen-actions"><button type="button" class="btn primary" id="genBtn">${ICON.spark} ${S.framework?"Rebuild the framework":"Generate the CEO framework"}</button><button type="button" class="btn" id="briefBtn">${ICON.copy} Copy answers as a brief</button><span class="gen-msg" id="genMsg"></span></div>
+  <p class="runs-note">${runs}</p>
+  <div class="gen-actions"><button type="button" class="btn primary" id="genBtn" ${left>0?"":"disabled"}>${ICON.spark} ${runLabel()}</button><button type="button" class="btn" id="briefBtn">${ICON.copy} Copy answers as a brief</button><span class="gen-msg" id="genMsg"></span></div>
   <div class="stream" id="stream"></div>
   <div class="brief-out" id="briefOut" hidden><textarea id="briefText" readonly aria-label="Brief text"></textarea></div>
   `;
@@ -225,6 +234,7 @@ async function generate(){
   const btn=document.getElementById("genBtn"),msg=document.getElementById("genMsg"),st=document.getElementById("stream");
   const filled=PAGES().reduce((n,i)=>n+progress(i)[0],0);
   if(filled<6){msg.className="gen-msg err";msg.textContent="Fill in a few more answers first. The framework can only score what's on the page.";return}
+  if(runsLeft()<=0){msg.className="gen-msg err";msg.textContent="You've used all your runs.";return}
   btn.disabled=true;msg.className="gen-msg";msg.textContent="This takes about a minute. Keep this page open.";
   const parts=["customer","edge","offer"],labels={customer:"Customer",edge:"Edge",offer:"Offer",overview:"Overview"},state={customer:"run",edge:"run",offer:"run",overview:"wait"};
   const paint=()=>{st.innerHTML=`<div class="gen-steps">${Object.keys(labels).map(k=>`<span class="gs ${state[k]}">${state[k]==="done"?"✓":state[k]==="run"?"…":"·"} ${labels[k]}</span>`).join("")}</div>`};paint();
@@ -235,15 +245,22 @@ async function generate(){
     state.overview="run";paint();
     const r=await post("overview");state.overview="done";paint();
     S.framework=r.framework;if(r.finishedAt)S.finishedAt=r.finishedAt;tick();
-    msg.textContent="Done. Your results are below.";renderRail();renderFramework();
+    CFG.runsUsed=typeof r.runsUsed==="number"?r.runsUsed:(CFG.runsUsed||0)+1;
+    renderRail();renderMain();
     const el=document.getElementById("results");if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(err){
     msg.className="gen-msg err";
     msg.textContent=err&&err.status===401?"Your session ended. Sign in again, then generate.":(err&&err.message&&err.message!=="failed"?err.message:"The framework didn't come back complete. Try again in a moment.");
-  }finally{btn.disabled=false;btn.innerHTML=`${ICON.spark} ${S.framework?"Rebuild the framework":"Generate the CEO framework"}`}
+  }finally{const b2=document.getElementById("genBtn");if(b2){b2.disabled=runsLeft()<=0;b2.innerHTML=`${ICON.spark} ${runLabel()}`}}
 }
 
 // ---------- results page ----------
+function recLink(sig){
+  sig=String(sig||"");
+  const id=/^C\d/i.test(sig)?"simba":/^E\d/i.test(sig)?"edge":/^O\d|pric|offer/i.test(sig)?"offer":null;
+  const i=id?STEPS.findIndex(s=>s.id===id):-1;
+  return i<0?"":`<button type="button" class="rec-go" data-step="${i}" data-pdf-skip>Answer on ${esc(STEPS[i].t)} →</button>`;
+}
 const IC={
  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
  child:'<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.2 2.2 1.8 3.5 1.8s2.5-.6 3.5-1.8"/><path d="M9 9.5h.01M15 9.5h.01"/>',
@@ -295,7 +312,7 @@ function renderResults(F){
   const trustPos=Math.max(4,Math.min(96,+(ef.trust&&ef.trust.position)||({Stranger:12,Politician:50,Spiderman:90}[ef.trust&&ef.trust.profile]||20)));
   return `
   <div class="topbar"><div class="rbrand"><img src="${document.querySelector(".brand img")?.src||""}" alt="" width="28" height="28"><span>${esc(name)}</span></div>
-   <nav class="nav" aria-label="Results sections"><a href="#r-overview" class="on">Overview</a><a href="#r-customer">Customer</a><a href="#r-edge">Edge</a><a href="#r-offer">Offer</a><a href="#r-next">Next steps</a></nav>
+   <nav class="nav" aria-label="Results sections"><a href="#r-overview" class="on">Overview</a><a href="#r-customer">Customer</a><a href="#r-edge">Edge</a><a href="#r-offer">Offer</a><a href="#r-next">Recommendations</a></nav>
    <button type="button" class="btn primary sm" id="pdfBtn">${ic("file","width:16px;height:16px")}<span>PDF</span></button></div>
   <div class="pdf-status" id="pdfStatus" hidden></div>
 
@@ -360,8 +377,9 @@ function renderResults(F){
   </section>
 
   <section id="r-next" class="chapter">
-   <div class="ch-head" data-pdf data-pdf-break><div class="ch-letter arrow">${ic("arrow","width:34px;height:34px")}</div><div><span class="eyebrow">Next steps</span><h2>What would make this Strong</h2><p>Answer these and your scores move.${top.size?" The highlighted questions matter most.":""}</p></div></div>
-   ${gapsAll.length?`<div class="sec" data-pdf><ol class="gaps">${gapsAll.map((g,i)=>`<li class="${top.has(i)?"top":""}"><span class="gn">${i+1}</span><div><b>${esc(g.title||g.signal)}</b><p>${esc(g.question)}</p><span class="gsig">${esc(g.signal)}</span></div></li>`).join("")}</ol></div>`:""}
+   <div class="ch-head" data-pdf data-pdf-break><div class="ch-letter arrow">${ic("arrow","width:34px;height:34px")}</div><div><span class="eyebrow">Recommendations</span><h2>How to make this Strong</h2><p>Add these to your answers, then run again. Your scores only move when your answers have more evidence: names, numbers, quotes and results.${top.size?" The highlighted ones matter most.":""}</p></div></div>
+   ${gapsAll.length?`<div class="sec" data-pdf><ol class="gaps">${gapsAll.map((g,i)=>`<li class="${top.has(i)?"top":""}"><span class="gn">${i+1}</span><div><b>${esc(g.title||g.signal)}</b><p>${esc(g.question)}</p><span class="gsig">${esc(g.signal)}</span>${recLink(g.signal)}</div></li>`).join("")}</ol></div>`:""}
+   <div class="again" data-pdf-skip><div><b>${runsLeft()>0?"Ready to run again?":"That was your last run"}</b><p>${runsLeft()===Infinity?"Admins can run as often as needed.":runsLeft()>0?`Update your answers on the pages above, then run again. You have ${runsLeft()} run${runsLeft()===1?"":"s"} left.`:"Your results stay here, and you can download them any time. Contact Block Ten Strategy if you need another run."}</p></div>${runsLeft()>0?`<button type="button" class="btn primary" id="againBtn">${ic("spark","width:16px;height:16px")} ${runLabel()}</button>`:""}</div>
    <div class="cta" data-pdf><div><span class="eyebrow">Coming from Block Ten</span><h3>Your full Brand & Content Strategy Report</h3><p>We take this framework and add verified competitor research, your content pillars and a 13-week long-form roadmap.</p><div class="rchips" style="margin-top:14px"><span class="rchip">Competitor research</span><span class="rchip">Content pillars</span><span class="rchip">13-week roadmap</span></div></div></div>
   </section>`;
 }
@@ -453,6 +471,7 @@ function briefText(){
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
   if(b.id==="genBtn")generate();
+  if(b.id==="againBtn"){window.scrollTo({top:0,behavior:"smooth"});generate();}
   if(b.id==="briefBtn"){const t=briefText(),box=document.getElementById("briefOut"),ta=document.getElementById("briefText"),msg=document.getElementById("genMsg");ta.value=t;box.hidden=false;
     const fallback=()=>{ta.focus();ta.select();msg.className="gen-msg";msg.textContent="Selected. Press Cmd+C or Ctrl+C to copy."};
     try{navigator.clipboard.writeText(t).then(()=>{msg.className="gen-msg";msg.textContent="Brief copied."},fallback)}catch(err){fallback()}}

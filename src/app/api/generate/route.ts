@@ -5,6 +5,7 @@ import { getDb, intakes, frameworks } from "@/db";
 import { resolveTarget } from "@/lib/target";
 import { promptFor, overviewPrompt } from "@/lib/prompts";
 import { tally, type Signal } from "@/lib/scoring";
+import { maxRuns } from "@/lib/runs";
 
 // Each call is one model request; give it room on Vercel.
 export const maxDuration = 300;
@@ -51,6 +52,13 @@ export async function POST(req: Request) {
   if (!row) return NextResponse.json({ error: "Fill in your intake first." }, { status: 400 });
   const intake = row.data as Record<string, any>;
 
+  if (!target.isAdmin) {
+    const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(frameworks).where(eq(frameworks.userId, target.userId));
+    if (n >= maxRuns()) {
+      return NextResponse.json({ error: `You've used all ${maxRuns()} runs. Contact Block Ten Strategy if you need another.` }, { status: 429 });
+    }
+  }
+
   try {
     if (PARTS.includes(part as Part)) {
       const result = await ask(promptFor(part as Part, intake)!, 8000);
@@ -78,10 +86,15 @@ export async function POST(req: Request) {
       const finishedAt = intake.finishedAt || Date.now();
       await db
         .update(intakes)
-        .set({ data: { ...intake, framework, finishedAt }, pending: null, updatedAt: new Date() })
+        .set({
+          data: sql`${intakes.data} || jsonb_build_object('framework', ${JSON.stringify(framework)}::jsonb, 'finishedAt', ${finishedAt}::bigint)`,
+          pending: null,
+          updatedAt: new Date(),
+        })
         .where(eq(intakes.userId, target.userId));
       await db.insert(frameworks).values({ userId: target.userId, data: framework });
-      return NextResponse.json({ framework, finishedAt });
+      const [{ n: runsUsed }] = await db.select({ n: sql<number>`count(*)::int` }).from(frameworks).where(eq(frameworks.userId, target.userId));
+      return NextResponse.json({ framework, finishedAt, runsUsed });
     }
 
     return NextResponse.json({ error: "Unknown part." }, { status: 400 });
