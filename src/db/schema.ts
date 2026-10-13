@@ -54,11 +54,20 @@ export const invites = pgTable("invite", {
   invitedAt: timestamp("invitedAt", { mode: "date" }).defaultNow().notNull(),
 });
 
-/** One intake per client. `data` is the whole form state; `pending` holds framework parts while Generate runs. */
+/** One intake per client. `data` is the whole form state, including `data.framework` once Block Ten adds it. */
 export const intakes = pgTable("intake", {
   userId: text("userId").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
   pending: jsonb("pending").$type<Record<string, unknown> | null>(),
+  /** Set when the client clicks "Submit for review". */
+  submittedAt: timestamp("submittedAt", { mode: "date" }),
+  /** Set when an admin sends the results; the client only sees results after this. */
+  releasedAt: timestamp("releasedAt", { mode: "date" }),
+  /** The designed PDF report, stored privately in Vercel Blob. */
+  reportUrl: text("reportUrl"),
+  reportName: text("reportName"),
+  reportSize: integer("reportSize"),
+  reportUploadedAt: timestamp("reportUploadedAt", { mode: "date" }),
   updatedAt: timestamp("updatedAt", { mode: "date" }).defaultNow().notNull(),
 });
 

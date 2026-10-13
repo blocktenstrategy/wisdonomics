@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { getDb, intakes } from "@/db";
 import { Engine } from "@/components/Engine";
+import { statusOf } from "@/lib/status";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,10 @@ export default async function IntakePage() {
         userId: session.user.id,
         intake: (row?.data as Record<string, unknown>) ?? {},
         intakeUrl: "/api/intake",
-        generateUrl: "/api/generate",
+        submitUrl: "/api/submit",
+        reportUrl: "/api/report",
+        admin: false,
+        status: statusOf(row),
       }}
       email={session.user.email ?? ""}
       isAdmin={session.user.isAdmin}
