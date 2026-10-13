@@ -8,13 +8,12 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "clients": "node --env-file=.env.local scripts/clients.mjs"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
     "@neondatabase/serverless": "^1.2.0",
-    "@vercel/blob": "^2.8.1",
+    "ai": "^7.0.138",
     "drizzle-orm": "^0.45.4",
     "next": "^16.4.0",
     "next-auth": "5.0.0-beta.32",

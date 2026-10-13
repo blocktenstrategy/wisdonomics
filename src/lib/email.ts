@@ -20,7 +20,7 @@ export function resendKey(): string | undefined {
   return process.env.AUTH_RESEND_KEY || process.env.RESEND_API_KEY;
 }
 
-async function send(to: string | string[], subject: string, html: string, text: string) {
+async function send(to: string, subject: string, html: string, text: string) {
   const key = resendKey();
   if (!key) throw new Error("RESEND_API_KEY is not set");
   const from = process.env.AUTH_EMAIL_FROM;
@@ -53,35 +53,5 @@ export async function sendInvite(to: string, name: string | null, loginUrl: stri
       { href: loginUrl, label: "Get started" },
     ),
     `${name ? `Hi ${name}, you` : "You"}'ve been invited to the Wisdonomics Engine by Block Ten Strategy. Sign in with this email address: ${loginUrl}`,
-  );
-}
-
-/** Tells the admins a client has submitted, with a link to their page. */
-export async function sendSubmittedNotice(to: string[], clientName: string, clientEmail: string, adminUrl: string) {
-  if (!to.length) return;
-  await send(
-    to,
-    `${clientName} submitted their intake`,
-    shell(
-      "New submission",
-      `<b style="color:#fff">${esc(clientName)}</b> (${esc(clientEmail)}) just submitted their Wisdonomics intake. Their answers are ready for you to build their CEO framework.`,
-      { href: adminUrl, label: "Open their intake" },
-    ),
-    `${clientName} (${clientEmail}) submitted their Wisdonomics intake. Open it: ${adminUrl}`,
-  );
-}
-
-/** Tells a client their results are ready. */
-export async function sendResultsReady(to: string, name: string | null, url: string) {
-  const hi = name ? `Hi ${esc(name)}, your` : "Your";
-  await send(
-    to,
-    "Your CEO framework is ready",
-    shell(
-      "Your results are ready",
-      `${hi} CEO framework from Block Ten Strategy is ready: who you build trust with, what gives you the edge, and what that trust turns into. Sign in to see your results and download your report.`,
-      { href: url, label: "See my results" },
-    ),
-    `${name ? `Hi ${name}, your` : "Your"} CEO framework from Block Ten Strategy is ready. Sign in to see it: ${url}`,
   );
 }

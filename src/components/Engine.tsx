@@ -4,10 +4,7 @@ export type EngineInit = {
   userId: string;
   intake: Record<string, unknown>;
   intakeUrl: string;
-  submitUrl: string;
-  reportUrl: string;
-  admin: boolean;
-  status: { submittedAt: number | null; releasedAt: number | null; report: { name: string; size: number | null } | null };
+  generateUrl: string;
 };
 
 type Props = {
@@ -16,8 +13,6 @@ type Props = {
   isAdmin: boolean;
   /** Shown when an admin is viewing a client's intake. */
   viewing?: { name: string } | null;
-  /** Admin controls shown above a client's intake. */
-  adminPanel?: React.ReactNode;
 };
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -27,7 +22,7 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
  * so the experience matches it exactly. Links out of this page are full page loads (plain <a>),
  * because engine.js runs once per page.
  */
-export function Engine({ init, email, isAdmin, viewing, adminPanel }: Props) {
+export function Engine({ init, email, isAdmin, viewing }: Props) {
   const acct = `
     <div class="acct">
       ${isAdmin ? `<a class="btn" href="/admin">Clients</a>` : ""}
@@ -35,11 +30,9 @@ export function Engine({ init, email, isAdmin, viewing, adminPanel }: Props) {
       <form method="post" action="/api/signout"><button class="btn" type="submit">Sign out</button></form>
     </div>`;
 
-  const top = `
-<canvas id="net" aria-hidden="true"></canvas><div class="glow a" aria-hidden="true"></div><div class="glow b" aria-hidden="true"></div>
-${viewing ? `<div class="admin-banner"><span>Admin view: you're editing <b>${esc(viewing.name)}</b>'s intake. Changes save to their account.</span><a href="/admin">← Back to clients</a></div>` : ""}`;
-
   const skeleton = `
+<canvas id="net" aria-hidden="true"></canvas><div class="glow a" aria-hidden="true"></div><div class="glow b" aria-hidden="true"></div>
+${viewing ? `<div class="admin-banner"><span>Admin view: you're editing <b>${esc(viewing.name)}</b>'s intake. Changes save to their account.</span><a href="/admin">← Back to clients</a></div>` : ""}
 <div class="wrap">
   <header class="mast">
     <div>
@@ -66,11 +59,9 @@ ${viewing ? `<div class="admin-banner"><span>Admin view: you're editing <b>${esc
 
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: top }} />
-      {adminPanel}
       <div dangerouslySetInnerHTML={{ __html: skeleton }} />
       <script id="wde-init" type="application/json" dangerouslySetInnerHTML={{ __html: json }} />
-      <Script src="/engine.js?v=2" strategy="afterInteractive" />
+      <Script src="/engine.js?v=1" strategy="afterInteractive" />
     </>
   );
 }
