@@ -284,7 +284,7 @@ const vClass=v=>v==="Strong"?"good":v==="Workable"?"warn":"bad";
 const vIcon=v=>v==="Strong"?"check":v==="Workable"?"help":"alert";
 const arr=a=>Array.isArray(a)?a:[];
 function ringSVG(size,r,w,pct,ghost){return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true"><g transform="rotate(-90 ${size/2} ${size/2})"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="${w}"/>${ghost!=null?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#BF7BCB" stroke-opacity=".3" stroke-width="${w}" stroke-linecap="round" pathLength="100" stroke-dasharray="${ghost} 100"/>`:""}<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#BF7BCB" stroke-width="${w}" stroke-linecap="round" pathLength="100" stroke-dasharray="${Math.max(.01,pct)} 100"/></g></svg>`}
-function secH(icon,title,note){return `<div class="sec-h"><div class="ic">${ic(icon)}</div><h3>${esc(title)}</h3>${note?`<small>${esc(note)}</small>`:""}</div>`}
+function secH(icon,title,note,screenOnly){return `<div class="sec-h"><div class="ic">${ic(icon)}</div><h3>${esc(title)}</h3>${note?`<small${screenOnly?" data-pdf-skip":""}>${esc(note)}</small>`:""}</div>`}
 function scoreRows(sig,key){return arr(sig).map(s=>{const v=+s[key]||0;return `<div class="sc-row" tabindex="0" data-tip="${esc(s.id+" · "+s.name)}" data-ev="${esc(s.evidence||"")}" aria-label="${esc(`${s.id} ${s.name}: ${v} of 2. ${s.evidence||""}`)}"><span class="id">${esc(s.id)}</span><span class="nm">${esc(s.name)}${s.gate?'<b class="gate">G</b>':""}</span><span class="track2"><i class="${v>=1?"on":""}"></i><i class="${v>=2?"on":""}"></i></span><span class="v">${v}</span></div>`}).join("")}
 
 function renderResults(F){
@@ -318,7 +318,7 @@ function renderResults(F){
     ${pk("r-edge","E","Edge","Why you, and nobody else?",e.pct,e.v,ef.oneLine,e.v==="Strong"?"":"To reach Strong: "+(ef.toStrong||""))}
     ${pk("r-offer","O","Offer","What does the trust turn into?",o.pct,offerPill,of.oneLine,os.pct>o.pct?`Sharpened below: ${os.pct}, ${os.v}`:(of.toStrong?"To reach Strong: "+of.toStrong:""))}
    </div>
-   <div class="sec" data-pdf>${secH("layers",`All ${groups.reduce((n,g)=>n+arr(g[1]).length,0)} trust signals`,"Hover a row for the evidence")}
+   <div class="sec" data-pdf>${secH("layers",`All ${groups.reduce((n,g)=>n+arr(g[1]).length,0)} trust signals`,"Hover a row for the evidence",true)}
     <div class="glasscard"><div class="legend"><span><i class="sw" style="background:var(--orchid)"></i>Points earned (0 to 2 each)</span><span><b class="gate">G</b>Gate: must score 2 for a Strong verdict</span></div>
      ${groups.map(([g,sig,key,t])=>`<div class="sc-group"><h4><span>${g}</span><b>${t.pct}</b></h4>${scoreRows(sig,key)}</div>`).join("")}
      <div class="axis" aria-hidden="true"><div></div><div></div><div><span>0</span><span>1</span><span>2</span></div><div></div></div>
@@ -495,10 +495,10 @@ document.addEventListener("click",e=>{
 
 // ---------- boot ----------
 (function boot(){
-  step=Math.min(+(ls(()=>sessionStorage.getItem(STEP_KEY))||0)||0,STEPS.length-1);
+  step=CFG.forceStep?Math.max(0,STEPS.findIndex(x=>x.id===CFG.forceStep)):Math.min(+(ls(()=>sessionStorage.getItem(STEP_KEY))||0)||0,STEPS.length-1);
   const has0=CFG.intake&&Object.keys(CFG.intake).length>0;
   S=normalize(CFG.intake||{});
-  if(!S.committed)step=0;
+  if(!S.committed&&!CFG.forceStep)step=0;
   renderRail();renderMain();tick();
   setStatus(has0?"Saved":"Not saved yet",has0);
   window.addEventListener("pagehide",()=>{if(dirty){try{fetch(CFG.intakeUrl,{method:"PUT",keepalive:true,headers:{"Content-Type":"application/json"},body:JSON.stringify(S)})}catch(e){}}});

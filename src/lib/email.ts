@@ -85,3 +85,14 @@ export async function sendResultsReady(to: string, name: string | null, url: str
     `${name ? `Hi ${name}, your` : "Your"} CEO framework from Block Ten Strategy is ready. Sign in to see it: ${url}`,
   );
 }
+
+/** A short notice to the admins (automation results and failures). */
+export async function sendAdminNotice(to: string[], subject: string, body: string, cta?: { href: string; label: string }) {
+  if (!to.length) return;
+  await send(
+    to,
+    subject,
+    shell(subject, esc(body).replace(/\n/g, "<br>"), cta ?? { href: (process.env.APP_URL || "") + "/admin", label: "Open the dashboard" }),
+    `${body}${cta ? `\n\n${cta.href}` : ""}`,
+  );
+}

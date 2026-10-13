@@ -1,5 +1,5 @@
-// The CEO framework rubric and prompts, ported from the artifact. Not used by the app while frameworks are built
-// by Block Ten in Claude Code; kept as the reference for that work and for turning on in-app generation later.
+// The CEO framework rubric and prompts, ported from the artifact. Used by scripts/pipeline.ts to brief the
+// Claude Code routine that builds each client's framework.
 /* eslint-disable */
 type Intake = Record<string, any>;
 type Part = "customer" | "edge" | "offer";
@@ -11,10 +11,10 @@ OFFER (max 14): O1 [gating] A logical next step exists. O2 Dream outcome stated 
 VERDICT per pillar from percent = points/max: Strong = 80%+ and no gating signal below 2; Workable = 55-79%, or 80%+ with a gating signal at 1; Weak = under 55% or any gating signal at 0.
 Compelling-enough tests: Customer = could you write the buyer's Monday morning in three sentences with a detail only that buyer would recognise. Edge = would a stranger after one 20-minute piece know what makes this person different and why to believe them. Offer = would the target customer feel foolish saying no, and is the quick win one sentence with a timeframe.`;
 
-const BASE_RULES=`You are a brand strategist at Block Ten Strategy running the CEO framework (Customer, Edge, Offer) from the Brand Conversion Engine. Trust makes the brand; content alone does not build trust. Long-form first.
+export const BASE_RULES=`You are a brand strategist at Block Ten Strategy running the CEO framework (Customer, Edge, Offer) from the Brand Conversion Engine. Trust makes the brand; content alone does not build trust. Long-form first.
 Write to the client as "you". When describing their customer, use the pronoun the intake implies, or "they" if unclear. Plain, direct English. No hype, no filler, no em dashes. Keep every string short (under 200 characters unless the field says otherwise).
 Ground everything in the intake. Quotes must be copied word for word from the intake. Never invent names, numbers, credentials, prices or quotes. When something is your inference rather than the client's words, set "confirm": true on it. Where data is missing, say so plainly and score 0.`;
-function intakeJSON(S: Intake){const d=JSON.parse(JSON.stringify(S));["framework","updatedAt","ready","committed","startedAt","finishedAt"].forEach(k=>delete d[k]);return JSON.stringify(d)}
+export function intakeJSON(S: Intake){const d=JSON.parse(JSON.stringify(S));["framework","updatedAt","ready","committed","startedAt","finishedAt"].forEach(k=>delete d[k]);return JSON.stringify(d)}
 export function promptFor(part: Part, S: Intake){
   const head=`${BASE_RULES}\n\nRUBRIC\n${RUBRIC}\n\nINTAKE (JSON)\n${intakeJSON(S)}\n\n`;
   const sig=`"signals":[{"id":"X1","name":"short name","score":0,"gate":false,"evidence":"one sentence"}]`;
